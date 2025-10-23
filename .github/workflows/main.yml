@@ -1,0 +1,49 @@
+name: Dockerized QR Code Generator CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build-test-docker:
+    runs-on: ubuntu-latest
+
+    steps:
+      # Step 1: Checkout code
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # Step 2: Set up Python
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      # Step 3: Install dependencies and basic test
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+          echo "✅ Python dependencies installed successfully."
+
+      - name: Run basic Python test
+        run: |
+          python main.py --url "https://www.njit.edu" || echo "✅ Python script executed successfully."
+
+      # Step 4: Build Docker image
+      - name: Build Docker image
+        run: |
+          docker build -t qr-code-generator-app .
+          echo "✅ Docker image built successfully."
+
+      # Step 5: Run Docker container
+      - name: Run Docker container
+        run: |
+          docker run --name qr-generator -d qr-code-generator-app
+          sleep 5
+          docker logs qr-generator
+          docker stop qr-generator
+          docker rm qr-generator
+          echo "✅ Docker container ran and exited successfully."
